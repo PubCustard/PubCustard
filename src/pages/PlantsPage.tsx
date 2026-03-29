@@ -229,6 +229,13 @@ export default function PlantsPage() {
                 <option value="finished">Finished</option>
                 <option value="failed">Failed</option>
               </select>
+              <button
+                onClick={() => planting.id && db.plantings.delete(planting.id)}
+                className="text-red-400 hover:text-red-600 shrink-0"
+                title="Remove planting"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           ))}
           {filteredPlantings.length === 0 && (
