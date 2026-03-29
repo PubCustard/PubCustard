@@ -1,10 +1,16 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Stage, Layer, Rect, Text, Group, Transformer } from 'react-konva';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Stage, Layer, Rect, Text, Group, Transformer, Circle } from 'react-konva';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import type { GardenBed, BedType } from '../types';
-import { Plus, ZoomIn, ZoomOut, Grid3X3, Trash2, X, Map } from 'lucide-react';
+import type { GardenBed, BedType, Plant, Planting, PlantCategory } from '../types';
+import { Plus, ZoomIn, ZoomOut, Grid3X3, Trash2, X, Map as MapIcon, Sprout } from 'lucide-react';
 import type Konva from 'konva';
+import {
+  calcPlantPositions,
+  allocateBedRegions,
+  PLANT_DOT_COLORS,
+  MIN_DOT_SPACING_PX,
+} from '../utils/plantLayout';
 
 const BED_COLORS: Record<BedType, string> = {
   vegetable: '#4ade80',
@@ -24,6 +30,31 @@ export default function GardenPage() {
     garden?.id ? db.beds.where('gardenId').equals(garden.id).toArray() : []
   , [garden?.id]) ?? [];
 
+  const plantings = useLiveQuery(() => db.plantings.toArray()) ?? [];
+  const plants = useLiveQuery(() => db.plants.toArray()) ?? [];
+
+  interface EnrichedPlanting extends Planting { plant: Plant }
+
+  const plantsById: Map<number, Plant> = useMemo(() => {
+    const m: Map<number, Plant> = new Map();
+    for (const p of plants) { if (p.id != null) m.set(p.id, p); }
+    return m;
+  }, [plants]);
+
+  const plantingsByBedId: Map<number, EnrichedPlanting[]> = useMemo(() => {
+    const map: Map<number, EnrichedPlanting[]> = new Map();
+    for (const planting of plantings) {
+      const plant = plantsById.get(planting.plantId);
+      if (!plant) continue;
+      const list = map.get(planting.bedId) ?? [];
+      list.push({ ...planting, plant });
+      map.set(planting.bedId, list);
+    }
+    return map;
+  }, [plantings, plantsById]);
+
+  const pxPerCm = CELL_SIZE / ((garden?.scale ?? 0.5) * 100);
+
   const [selectedBedId, setSelectedBedId] = useState<number | null>(null);
   const [scale, setScale] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
@@ -31,6 +62,7 @@ export default function GardenPage() {
   const [editPanel, setEditPanel] = useState(false);
   const [editName, setEditName] = useState('');
   const [editType, setEditType] = useState<BedType>('vegetable');
+  const [addPlantId, setAddPlantId] = useState<number>(0);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -151,7 +183,7 @@ export default function GardenPage() {
       {/* Toolbar */}
       <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
-          <Map className="w-5 h-5 text-green-700 dark:text-green-400" />
+          <MapIcon className="w-5 h-5 text-green-700 dark:text-green-400" />
           <h1 className="text-lg font-bold text-green-900 dark:text-green-100">Garden Layout</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -239,14 +271,77 @@ export default function GardenPage() {
                 <Text
                   text={bed.name}
                   width={bed.width}
-                  height={bed.height}
                   align="center"
-                  verticalAlign="middle"
-                  fontSize={14}
+                  verticalAlign="top"
+                  fontSize={12}
                   fill="#14532d"
                   fontStyle="bold"
-                  padding={4}
+                  padding={3}
                 />
+                {/* Plant dots inside bed */}
+                {(() => {
+                  const bedPlantings = plantingsByBedId.get(bed.id!) ?? [];
+                  if (bedPlantings.length === 0) return null;
+                  const regions = allocateBedRegions(bed.height, bedPlantings.length);
+                  return bedPlantings.map((planting, idx) => {
+                    const region = regions[idx];
+                    const dotColor = PLANT_DOT_COLORS[planting.plant.category as PlantCategory];
+                    const spacingPx = planting.plant.spacingPlantCm * pxPerCm;
+                    const positions = calcPlantPositions(
+                      bed.width, region.height,
+                      planting.plant.spacingPlantCm,
+                      planting.plant.spacingRowCm,
+                      pxPerCm
+                    );
+
+                    // Dense planting: show shaded region with count
+                    if (spacingPx < MIN_DOT_SPACING_PX) {
+                      return (
+                        <Group key={`planting-${planting.id}`}>
+                          <Rect
+                            x={2} y={region.y + 2}
+                            width={bed.width - 4} height={region.height - 4}
+                            fill={dotColor} opacity={0.2}
+                            cornerRadius={2}
+                          />
+                          <Text
+                            x={4} y={region.y + region.height / 2 - 5}
+                            text={`${planting.plant.name} (${positions.length})`}
+                            fontSize={10} fill={dotColor}
+                            fontStyle="bold"
+                          />
+                        </Group>
+                      );
+                    }
+
+                    // Normal spacing: show individual dots
+                    const initial = planting.plant.name[0].toUpperCase();
+                    return (
+                      <Group key={`planting-${planting.id}`}>
+                        {positions.map((pos, i) => (
+                          <Group key={i}>
+                            <Circle
+                              x={pos.x} y={pos.y + region.y}
+                              radius={Math.min(4, spacingPx / 3)}
+                              fill={dotColor}
+                              opacity={0.85}
+                              stroke="#fff"
+                              strokeWidth={0.5}
+                            />
+                            {spacingPx >= 20 && (
+                              <Text
+                                x={pos.x + 5} y={pos.y + region.y - 5}
+                                text={initial}
+                                fontSize={8}
+                                fill={dotColor}
+                              />
+                            )}
+                          </Group>
+                        ))}
+                      </Group>
+                    );
+                  });
+                })()}
               </Group>
             ))}
 
@@ -309,6 +404,81 @@ export default function GardenPage() {
             >
               Save Changes
             </button>
+
+            {/* Plants in this Bed */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                <Sprout className="w-4 h-4" /> Plants in this Bed
+              </h4>
+
+              {/* List current plantings */}
+              {(plantingsByBedId.get(selectedBedId) ?? []).length === 0 && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 italic mb-2">No plants assigned yet.</p>
+              )}
+              {(plantingsByBedId.get(selectedBedId) ?? []).map((p) => {
+                // Calculate how many fit in this bed
+                const bedPlantings = plantingsByBedId.get(selectedBedId) ?? [];
+                const regions = allocateBedRegions(
+                  beds.find(b => b.id === selectedBedId)?.height ?? 0,
+                  bedPlantings.length
+                );
+                const regionIdx = bedPlantings.indexOf(p);
+                const region = regions[regionIdx];
+                const bedWidth = beds.find(b => b.id === selectedBedId)?.width ?? 0;
+                const count = region
+                  ? calcPlantPositions(bedWidth, region.height, p.plant.spacingPlantCm, p.plant.spacingRowCm, pxPerCm).length
+                  : 0;
+                return (
+                  <div key={p.id} className="flex items-center justify-between py-2 px-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg mb-1.5">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PLANT_DOT_COLORS[p.plant.category as PlantCategory] }} />
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{p.plant.name}</span>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                        {p.plant.spacingPlantCm}cm x {p.plant.spacingRowCm}cm · {count} plants fit
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => p.id && db.plantings.delete(p.id)}
+                      className="text-red-400 hover:text-red-600 shrink-0 ml-2"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+
+              {/* Add plant to bed */}
+              <div className="flex gap-2 mt-2">
+                <select
+                  value={addPlantId}
+                  onChange={(e) => setAddPlantId(Number(e.target.value))}
+                  className="flex-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500 min-w-0"
+                >
+                  <option value={0}>Select plant...</option>
+                  {plants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <button
+                  disabled={!addPlantId}
+                  onClick={async () => {
+                    if (!addPlantId || !selectedBedId) return;
+                    await db.plantings.add({
+                      plantId: addPlantId,
+                      bedId: selectedBedId,
+                      status: 'planned',
+                      notes: '',
+                      year: new Date().getFullYear(),
+                    });
+                    setAddPlantId(0);
+                  }}
+                  className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg text-sm font-medium shrink-0"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
             <button
               onClick={deleteBed}
               className="w-full py-2 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-600 rounded-lg font-medium"
@@ -323,7 +493,7 @@ export default function GardenPage() {
       {beds.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
-            <Map className="w-12 h-12 text-green-300 mx-auto mb-3" />
+            <MapIcon className="w-12 h-12 text-green-300 mx-auto mb-3" />
             <p className="text-gray-500 dark:text-gray-400">Click "Add Bed" to start designing your garden</p>
           </div>
         </div>
