@@ -1,68 +1,130 @@
 # Plot - Garden Planner
 
-A personal garden planner PWA designed for central Scotland (USDA zone 8a, RHS H4-H5). Plan your garden beds, track plantings, and follow Scotland-specific sowing schedules — all offline, all local.
-
-## Features
-
-- **Garden Layout Designer** — drag-and-drop canvas for planning garden beds
-- **Plant Database** — 55+ plants with Scotland-specific sowing/harvest dates
-- **Planting Tracker** — record what's planted where and track progress
-- **Gantt Schedule** — visual timeline of your growing year
-- **Garden Journal** — log observations with photos and weather notes
-- **Task Dashboard** — automatic reminders based on your planting schedule
-- **Full PWA** — works offline, installable on any device
-
-## Tech Stack
-
-- React 19 / TypeScript / Vite
-- Tailwind CSS v4
-- React Konva (garden canvas)
-- Dexie.js (IndexedDB)
-- vite-plugin-pwa
-- Lucide React (icons)
-- date-fns (date handling)
+A personal garden planner for central Scotland. Plan beds, track plantings, follow sowing schedules — all offline, all in your browser.
 
 ---
 
-## Prerequisites
+## Quick Start
 
-- **Node.js** 18 or higher
-- **npm** 9 or higher
+You need [Node.js](https://nodejs.org/) version 18 or newer. If you're not sure, open a terminal and run `node -v` — if you see `v18` or higher, you're good.
 
-## Getting Started
+```bash
+# 1. Clone and enter the project
+git clone <repo-url>
+cd PubCustard
 
-1. **Clone the repository:**
+# 2. Install everything
+npm install --legacy-peer-deps
 
-   ```bash
-   git clone <repo-url>
-   cd PubCustard
-   ```
+# 3. Run the app
+npm run dev
+```
 
-2. **Install dependencies:**
+That's it. Open **http://localhost:5173** in your browser. The app is ready to use.
 
-   ```bash
-   npm install
-   ```
+> **Tip:** On first launch, the app automatically loads 55+ plants with Scotland-specific sowing dates. You don't need to set anything up — just start exploring.
 
-   > If you encounter peer dependency warnings, use `npm install --legacy-peer-deps`.
+---
 
-3. **Start the development server:**
+## Install on Your Phone or Computer
 
-   ```bash
-   npm run dev
-   ```
+Plot works like a native app if you install it from your browser:
 
-4. **Open in your browser:**
+| Platform | How to install |
+|----------|---------------|
+| **Android** | Open in Chrome > tap the 3-dot menu > "Install app" |
+| **iPhone/iPad** | Open in Safari > tap Share > "Add to Home Screen" |
+| **Desktop** | Open in Chrome or Edge > click the install icon in the address bar |
 
-   Navigate to [http://localhost:5173](http://localhost:5173). The app will hot-reload as you make changes.
+Once installed, it works offline — no internet needed.
 
-## Production Build
+---
+
+## How to Use Plot
+
+Plot has five main sections, accessible from the bottom bar (phone) or sidebar (desktop).
+
+### 1. Dashboard
+
+Your home screen. Shows:
+
+- **Seasonal reminders** — the app checks today's date against the plant database and tells you what to sow, transplant, or harvest right now.
+- **Your task list** — tap **Add Task** to create to-dos like "Order seed potatoes" or "Build raised bed". Give them due dates and tick them off as you go.
+
+### 2. Garden Layout
+
+Draw your garden on a grid canvas.
+
+- Tap **Add Bed** to drop a new bed onto the grid.
+- **Drag** beds to move them. **Pull the handles** to resize. **Rotate** with the top handle.
+- **Tap a bed** to edit its name and type (vegetable, fruit, flower, herb, path, etc.) — each type gets a different colour.
+- Use **+/-** to zoom, drag empty space to pan, and toggle the grid on/off.
+
+### 3. Plants & Plantings
+
+Two tabs here:
+
+**Plant Database** — Browse or search all 55+ built-in plants. Tap any plant to see its full details: when to sow, when to harvest, spacing, companion plants, and more. You can also add your own custom plants.
+
+**My Plantings** — This is where you record what you've actually planted. Tap **Add Planting**, pick a plant and a bed, and track its journey:
+
+> planned → sown → transplanted → growing → harvesting → finished
+
+Update the status anytime using the dropdown on each entry.
+
+### 4. Schedule
+
+A visual calendar showing the full growing year (January to December).
+
+- **Template view** shows the ideal sowing/harvest schedule for all plants — great for planning.
+- **My Plan view** shows just your plantings.
+- Bars are colour-coded: yellow = indoor sow, green = direct sow, blue = transplant, red = harvest.
+- A green line marks today, so you can see where you are in the season.
+
+Scroll sideways to see the full year.
+
+### 5. Journal
+
+A garden diary.
+
+- Tap the **+** button to add an entry.
+- Write what you observed, pick the weather, optionally link it to a bed or plant, and attach a photo if you like.
+- Photos are automatically shrunk to save space.
+- Entries show newest-first.
+
+### Settings
+
+Open from the sidebar (desktop) or bottom of the navigation.
+
+- **Dark mode** — toggle on/off.
+- **Units** — metric (default) or imperial.
+- **Export** — download all your data as a backup file (JSON).
+- **Import** — restore from a backup file.
+- **Clear all data** — start fresh (asks you twice to confirm).
+
+---
+
+## Backing Up Your Data
+
+Everything is stored in your browser — if you clear browser data, it's gone. To protect your work:
+
+1. Go to **Settings**
+2. Tap **Export All Data**
+3. Save the downloaded JSON file somewhere safe
+
+To restore: go to Settings > Import and select your backup file.
+
+---
+
+## Building for Production
+
+If you want to deploy the app to a web server:
 
 ```bash
 npm run build
 ```
 
-This generates the optimised production bundle in `dist/`, including the PWA service worker. To preview the production build locally:
+This creates a `dist/` folder with everything needed. To test the production build locally:
 
 ```bash
 npm run preview
@@ -70,166 +132,49 @@ npm run preview
 
 ---
 
-## Installing as a PWA
+## For Developers
 
-Plot works as a Progressive Web App — you can install it on your phone or desktop for an app-like experience.
+### Tech Stack
 
-**On Android (Chrome):**
-1. Open the app URL in Chrome
-2. Tap the three-dot menu (top right)
-3. Tap "Add to Home Screen" or "Install app"
+| Tool | Purpose |
+|------|---------|
+| React 19 + TypeScript | UI framework |
+| Vite | Build tool & dev server |
+| Tailwind CSS v4 | Styling |
+| React Konva | Garden canvas (drag & drop) |
+| Dexie.js | Local database (IndexedDB) |
+| vite-plugin-pwa | Offline support & install |
+| Lucide React | Icons |
+| date-fns | Date formatting |
 
-**On iOS (Safari):**
-1. Open the app URL in Safari
-2. Tap the Share button (bottom centre)
-3. Tap "Add to Home Screen"
-
-**On Desktop (Chrome/Edge):**
-1. Open the app URL
-2. Click the install icon in the address bar (or Menu > "Install Plot")
-
-Once installed, the app works fully offline.
-
----
-
-## Using the App
-
-### Dashboard (Home)
-
-The dashboard is your starting point each time you open Plot.
-
-- **Seasonal Reminders** appear automatically based on the current date and the sowing/transplant/harvest windows of the plants in your database. For example, if it's March, you'll see reminders like "Time to sow peas indoors" or "Time to direct sow radish".
-- **Tasks** are your personal to-do list. Click **Add Task** to create manual tasks with optional due dates (e.g. "Build new raised bed", "Order seed potatoes"). Mark them complete with the circle checkbox. Overdue tasks are highlighted in red.
-
-### Garden Layout
-
-A grid-based canvas for designing your garden from above.
-
-- **Add Bed**: Click the button to place a new rectangular bed on the canvas. Each bed defaults to "Bed 1", "Bed 2", etc.
-- **Move beds**: Drag any bed to reposition it.
-- **Resize beds**: Select a bed, then drag the corner/edge handles to resize.
-- **Rotate beds**: Use the rotation handle on a selected bed.
-- **Edit bed details**: Click/tap a bed to open the edit panel on the right, where you can rename it, change its type (vegetable, fruit, flower, herb, mixed, path, structure), and see the colour change accordingly.
-- **Delete beds**: Select a bed and click the red trash icon in the toolbar, or use the delete button in the edit panel.
-- **Zoom**: Use the +/- buttons or scroll wheel. **Pan**: Drag on empty canvas space.
-- **Grid toggle**: Show/hide the grid overlay for alignment.
-
-The scale indicator (bottom-left) shows current zoom level and grid scale (default: 1 square = 0.5m).
-
-### Plants & Plantings
-
-This section has two tabs:
-
-**Plant Database:**
-- Browse all 55+ built-in plants with Scotland-specific growing data.
-- **Search** by name or **filter** by category (vegetable, fruit, herb, flower).
-- Click any plant card to open a detail panel showing: sowing windows, harvest period, spacing, sun/water requirements, companion plants, antagonists, and notes.
-- **Add custom plants** using the "Add Plant" button — fill in the name, category, spacing, and notes.
-
-**My Plantings:**
-- Track what you've actually planted. Click **Add Planting** to record:
-  - Which plant (from the database)
-  - Which bed (from your garden layout)
-  - Dates sown (indoor/direct), transplanted, harvested
-  - Status: planned → sown → transplanted → growing → harvesting → finished (or failed)
-  - Quantity and notes
-- Update the status of any planting using the dropdown on each row.
-- Filter by status to see e.g. only "growing" plants.
-
-### Schedule (Gantt Chart)
-
-A visual timeline of the entire growing year, January through December.
-
-**Template view:**
-- Shows the default sowing/harvest schedule for every plant in your database.
-- Colour-coded bars:
-  - Yellow = indoor sowing window
-  - Green = direct sow window
-  - Blue = transplant window
-  - Red = harvest window
-- Filter by plant category.
-- A green vertical line marks today's date.
-
-**My Plan view:**
-- Shows only the plants you've added as plantings, with their schedule bars and current status.
-
-Scroll horizontally to see the full year. Use this to plan what to sow when and spot gaps in your growing calendar.
-
-### Journal
-
-A chronological diary for garden observations.
-
-- Click the **+** floating button (bottom-right) to add a new entry.
-- Each entry supports:
-  - **Date** (defaults to today)
-  - **Free text** notes
-  - **Weather** — tap an icon (sunny, cloudy, rainy, frost, snow, windy, overcast)
-  - **Link to a bed or plant** — optional dropdowns to tag entries
-  - **Photo** — upload from your device. Images are automatically compressed to max 1200px wide and stored locally.
-- Entries appear newest-first in a scrollable feed.
-
-### Settings
-
-Access via the sidebar (desktop) or the gear icon.
-
-- **Garden Name**: Personalise the name of your garden.
-- **Units**: Toggle between metric (cm/m, default) and imperial (in/ft).
-- **Dark Mode**: Toggle dark/light theme.
-- **Export Data**: Downloads all your data (plants, beds, plantings, journal, tasks, settings) as a single JSON file. Use this for backups.
-- **Import Data**: Load a previously exported JSON backup. This replaces all current data.
-- **Clear All Data**: Wipes everything and re-seeds the default plant database. Requires double confirmation.
-
----
-
-## Data & Storage
-
-All data is stored **locally in your browser** using IndexedDB (via Dexie.js). Nothing is sent to any server.
-
-**Database stores:**
-| Store | Contents |
-|-------|----------|
-| `plants` | Plant database (built-in + custom) |
-| `gardens` | Garden layout metadata (grid size, scale) |
-| `beds` | Bed shapes, positions, names, colours |
-| `plantings` | What's planted where and when |
-| `journal` | Journal entries with photos |
-| `tasks` | Manual to-do items |
-| `settings` | User preferences |
-
-**First launch:** The app automatically seeds 55+ plants with Scotland-specific growing data and creates a default garden.
-
-**Backups:** Regularly use Settings → Export to save a JSON backup. If you clear your browser data or switch devices, you can restore from this file using Settings → Import.
-
----
-
-## Offline Support
-
-After the first load, the app works entirely without internet. The service worker caches all assets (JS, CSS, HTML, icons). Data is stored in IndexedDB, which persists across browser sessions.
-
----
-
-## Project Structure
+### Project Structure
 
 ```
 src/
-├── components/
-│   └── Navigation.tsx      # Responsive sidebar + bottom tabs
-├── data/
-│   └── seedPlants.ts       # 55+ Scotland-specific plant records
+├── components/Navigation.tsx   — sidebar + bottom tabs
+├── data/seedPlants.ts          — 55+ plant records for Scotland
 ├── pages/
-│   ├── DashboardPage.tsx   # Home screen with tasks & reminders
-│   ├── GardenPage.tsx      # Canvas layout designer (React Konva)
-│   ├── PlantsPage.tsx      # Plant database & planting tracker
-│   ├── SchedulePage.tsx    # Gantt chart timeline
-│   ├── JournalPage.tsx     # Garden diary with photos
-│   └── SettingsPage.tsx    # Preferences & data management
-├── App.tsx                 # Root component with routing
-├── db.ts                   # Dexie database setup & seeding
-├── types.ts                # TypeScript interfaces
-├── main.tsx                # Entry point
-└── index.css               # Tailwind imports & theme
+│   ├── DashboardPage.tsx       — tasks & seasonal reminders
+│   ├── GardenPage.tsx          — drag-and-drop bed designer
+│   ├── PlantsPage.tsx          — plant database & planting tracker
+│   ├── SchedulePage.tsx        — Gantt chart timeline
+│   ├── JournalPage.tsx         — diary with photos & weather
+│   └── SettingsPage.tsx        — preferences & data management
+├── App.tsx                     — root component
+├── db.ts                       — database setup & seed logic
+├── types.ts                    — TypeScript types
+├── main.tsx                    — entry point
+└── index.css                   — Tailwind config & theme colours
 ```
 
-## License
+### Database Stores
 
-Private project — not currently licensed for redistribution.
+| Store | What it holds |
+|-------|---------------|
+| `plants` | Plant database (built-in + custom) |
+| `gardens` | Garden grid size and scale |
+| `beds` | Bed positions, shapes, names, colours |
+| `plantings` | What's planted where and when |
+| `journal` | Diary entries with photos |
+| `tasks` | To-do items |
+| `settings` | Preferences (units, dark mode, etc.) |
